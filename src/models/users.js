@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
+    unique: true,
     required: true,
     trim: true
   },
@@ -20,6 +21,23 @@ const userSchema = new mongoose.Schema({
     }
   }
 })
+
+// Custom method
+userSchema.statics.findByCredentials = async (name, password) => {
+  const user = await User.findOne({ name });
+  console.log(user)
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const passwordMatch = await bcrypt.compare(password, user.password);
+
+  if (!passwordMatch) {
+    throw new Error('Unable to login.');
+  }
+
+  return user
+}
 
 userSchema.pre('save', async function(next) {
   const user = this // this refers to the document about to be save
