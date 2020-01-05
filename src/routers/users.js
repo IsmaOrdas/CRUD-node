@@ -58,30 +58,40 @@ router.post('/users/logoutAll', auth, async (req, res) => {
   }
 })
 
-router.patch('/users/:id', async (req, res) => {
+router.patch('/users/me', auth, async (req, res) => {
   const updates = Object.keys(req.body);
   const allowedUpdates = ['name', 'password'];
-  console.log(updates)
   const isValidOperation = updates.every(update => allowedUpdates.includes(update));
-  const _id = req.params.id;
+  //const _id = req.params.id;
 
   if (!isValidOperation) {
     return res.status(400).send({ error: 'Invalid operation' });
   }
 
   try {
-    const user = await User.findById(_id);
+    //Old code to find user by id
+    //const user = await User.findById(_id);
 
-    updates.forEach(update => user[update] = req.body[update])
-    await user.save();
+    updates.forEach(update => req.user[update] = req.body[update])
+    await req.user.save();
 
-    if (!user) {
-      return res.status(404).send();
-    }
+    //Old code to find user by id
+    //if (!user) {
+    //return res.status(404).send();
+    //}
 
-    res.send(user);
+    res.send(req.user);
   } catch (e) {
     res.status(400).send();
+  }
+})
+
+router.delete('/users/me', auth, async (req, res) => {
+  try {
+    await req.user.remove();
+    res.send(req.user)
+  } catch (e) {
+    res.status(500).send();
   }
 })
 
