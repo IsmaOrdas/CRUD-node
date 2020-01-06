@@ -1,9 +1,16 @@
 const express = require('express');
+const auth = require('../middleware/auth');
 const router = new express.Router();
 const Book = require('../models/books')
 
-router.post('/books', async (req, res) => {
-  const book = new Book(req.body)
+router.post('/books', auth, async (req, res) => {
+  //const book = new Book(req.body)
+  const book = new Book({
+    ...req.body,
+    owner: req.user._id
+  })
+
+  console.log(book)
 
   try {
     await book.save()
@@ -13,20 +20,23 @@ router.post('/books', async (req, res) => {
   }
 })
 
-router.get('/books', async (req, res) => {
+router.get('/books', auth, async (req, res) => {
   try {
-    const books = await Book.find({})
-    res.status(200).send(books)
+    /*const books = await Book.find({})
+    res.status(200).send(books)*/
+
+    await req.user.populate('books').execPopulate()
+    res.send(req.user.books)
   } catch (e) {
     res.status(500).send()
   }
 })
 
-router.get('/books/:id', async (req, res) => {
+router.get('/books/:id', auth, async (req, res) => {
   const _id = req.params.id;
 
   try {
-    const book = await Book.findById(_id)
+    const book = await Book.findOne({ _id, owner: req.user._id })
 
     if (!book) {
       return res.status(404).send();
@@ -38,7 +48,7 @@ router.get('/books/:id', async (req, res) => {
   }
 })
 
-router.patch('/books/:id', async (req, res) => {
+router.patch('/books/:id', auth, async (req, res) => {
   const updates = Object.keys(req.body);
   const allowedUpdates = ['author', 'title'];
   const isValidOperation = updates.every((update) => allowedUpdates.includes(update))
@@ -49,10 +59,30 @@ router.patch('/books/:id', async (req, res) => {
   }
   
   try {
-    const book = await Book.findByIdAndUpdate(_id, req.body, {new: true, runValidators: true})
+    //const book = await Book.findByIdAndUpdate(_id, req.body, {new: true, runValidators: true})
+    const book = await Book.findOne({ _id, owner: req.user._id })
+
 
     if (!book) {
       return res.status(404).send()
+    }
+
+    updates.forEach(update => book[update] = req.body[update])
+    await book.save();
+
+    res.send(book)
+  } catch (e) {
+    res.status(500).send()
+  }
+})
+
+router.delete('/books/:id', auth, async (req, res) => {
+  try {
+    console.log(req.user)
+    const book = await Book.findOneAndDelete({ _id: req.params.id, owner: req.user._id });
+
+    if (!book) {
+      res.status(404).send()
     }
 
     res.send(book)
