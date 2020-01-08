@@ -10,8 +10,6 @@ router.post('/books', auth, async (req, res) => {
     owner: req.user._id
   })
 
-  console.log(book)
-
   try {
     await book.save()
     res.status(201).send(book)
@@ -78,7 +76,6 @@ router.patch('/books/:id', auth, async (req, res) => {
 
 router.delete('/books/:id', auth, async (req, res) => {
   try {
-    console.log(req.user)
     const book = await Book.findOneAndDelete({ _id: req.params.id, owner: req.user._id });
 
     if (!book) {
