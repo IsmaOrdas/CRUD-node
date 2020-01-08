@@ -19,11 +19,19 @@ router.post('/books', auth, async (req, res) => {
 })
 
 router.get('/books', auth, async (req, res) => {
+  const match = {}
+
+  if (req.query.read) {
+    match.read = req.query.read === 'true'
+  }
   try {
     /*const books = await Book.find({})
     res.status(200).send(books)*/
 
-    await req.user.populate('books').execPopulate()
+    await req.user.populate({
+      path: 'books',
+      match
+    }).execPopulate()
     res.send(req.user.books)
   } catch (e) {
     res.status(500).send()
@@ -48,7 +56,7 @@ router.get('/books/:id', auth, async (req, res) => {
 
 router.patch('/books/:id', auth, async (req, res) => {
   const updates = Object.keys(req.body);
-  const allowedUpdates = ['author', 'title'];
+  const allowedUpdates = ['author', 'title', 'read'];
   const isValidOperation = updates.every((update) => allowedUpdates.includes(update))
   const _id = req.params.id;
 
