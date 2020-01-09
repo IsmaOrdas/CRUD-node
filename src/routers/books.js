@@ -18,13 +18,22 @@ router.post('/books', auth, async (req, res) => {
   }
 })
 
-//GET /books?read=true
+// GET /books?read=true
+// GET /books?limit=10&skip=2
+// GET /books?sortBy=createdAt:desc
 router.get('/books', auth, async (req, res) => {
   const match = {}
+  const sort = {}
 
   if (req.query.read) {
     match.read = req.query.read === 'true'
   }
+
+  if (req.query.sortBy) {
+    const parts = req.query.sortBy.split(':')
+    sort[parts[0]] = parts[1] === 'desc' ? -1 : 1
+  }
+
   try {
     /*const books = await Book.find({})
     res.status(200).send(books)*/
@@ -34,7 +43,8 @@ router.get('/books', auth, async (req, res) => {
       match,
       options: {
         limit: parseInt(req.query.limit),
-        skip: parseInt(req.query.skip)
+        skip: parseInt(req.query.skip),
+        sort
       }
     }).execPopulate()
     res.send(req.user.books)
