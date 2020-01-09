@@ -18,6 +18,7 @@ router.post('/books', auth, async (req, res) => {
   }
 })
 
+//GET /books?read=true
 router.get('/books', auth, async (req, res) => {
   const match = {}
 
@@ -30,7 +31,11 @@ router.get('/books', auth, async (req, res) => {
 
     await req.user.populate({
       path: 'books',
-      match
+      match,
+      options: {
+        limit: parseInt(req.query.limit),
+        skip: parseInt(req.query.skip)
+      }
     }).execPopulate()
     res.send(req.user.books)
   } catch (e) {
